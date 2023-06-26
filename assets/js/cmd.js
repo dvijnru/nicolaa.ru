@@ -37,6 +37,7 @@ class Cmd {
         this.$input.addEventListener('blur', this.inputBlur);
         this.$input.addEventListener('input', this.inputInput);
         this.$input.addEventListener('click', this.inputClickHandler);
+        this.$input.addEventListener('keyup', this.inputKeydownHandler);
     }
     beforeunloadHandler = (event) => {
         this.$input.blur();
@@ -49,6 +50,10 @@ class Cmd {
         this.changeCursor();
     }
     inputClickHandler = () => {
+        this.changeCursor();
+    }
+    inputKeydownHandler = (event) => {
+        console.log(event.target.innerText);
         this.changeCursor();
     }
     changeCursor = () => {
