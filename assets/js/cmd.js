@@ -37,7 +37,8 @@ class Cmd {
         this.$input.addEventListener('blur', this.inputBlur);
         this.$input.addEventListener('input', this.inputInput);
         this.$input.addEventListener('click', this.inputClickHandler);
-        this.$input.addEventListener('keyup', this.inputKeydownHandler);
+        this.$input.addEventListener('keyup', this.inputKeyUpHandler);
+        this.$input.addEventListener('keydown', this.inputKeyDownHandler);
     }
     beforeunloadHandler = (event) => {
         this.$input.blur();
@@ -52,10 +53,62 @@ class Cmd {
     inputClickHandler = () => {
         this.changeCursor();
     }
-    inputKeydownHandler = (event) => {
-        console.log(event.target.innerText);
-        this.changeCursor();
+    inputKeyUpHandler = (event) => {
+        event.preventDefault();
+        let keyCode = event.keyCode || event.which;
+        if(keyCode == 37 || keyCode == 38 || keyCode == 39 || keyCode == 40) {
+            this.changeCursor();
+        }
     }
+    inputKeyUpHandler = (event) => {
+        event.preventDefault();
+        let keyCode = event.keyCode || event.which;
+        if(keyCode == 13) {
+            this.sendMessage();
+        }
+    }
+    sendMessage = () => {
+        this.$inputCursor.style.display = 'none';
+        let value = this.$input.innerText.trim();
+        let $blockRow = this.renderBlockRow(value);
+        this.$container.querySelector('.cmd-block-content').appendChild($blockRow);
+        this.$input.innerHTML = '';
+        this.changeCursor();
+        this.$inputCursor.style.display = 'block';
+        this.sendCommand(value);
+    }
+    sendCommand = (value) => {
+        let message = 'command not found: ' + value + '<br>type "help" for more information';
+        if(value == 'help') {
+            message = 'help';
+        }
+        let $block = document.createElement('div');
+        $block.className = 'cmd-block-message';
+        // $block.innerHTML = message;
+        this.$container.querySelector('.cmd-block-content').appendChild($block);
+        this.typeWriter($block, message, 0);
+    }
+
+    typeWriter = ($block, message, i, tag = '') => {
+        if (i < message.length) {
+            let text = message.charAt(i);
+            if(text == '<') {
+                tag += text;
+            } else if(text == '>') {
+                tag += text;
+                $block.innerHTML += tag;
+                tag = '';
+            } else if(tag) {
+                tag += text;
+            } else {
+                $block.innerHTML += text;
+            }
+            i++;
+            setTimeout(this.typeWriter, 20, $block, message, i, tag);
+        }
+    }
+
+
     changeCursor = () => {
         let position = window.getSelection().anchorOffset;
         this.$inputCursor.style.left = position + 'ch';
@@ -65,8 +118,7 @@ class Cmd {
         if(event.target == '') {
 
         } else {
-            let $input = event.target.closest('.terminal').querySelector('.cmd-input')
-            $input.focus();
+            this.$input.focus();
             if(!this.$container.classList.contains('cmd-input-focus')) {
                 this.$container.classList.add('cmd-input-focus');
             }
@@ -107,7 +159,6 @@ class Cmd {
             $terminalNoise.className = 'noise';
             $terminal.appendChild($terminalScanLines);
             $terminal.appendChild($terminalNoise);
-
         }
 
         this.$block.appendChild($terminal);
@@ -127,8 +178,8 @@ class Cmd {
         if(text) {
             blockRowBody.innerHTML = text;
         } else {
-            let blockInput = document.createElement('div');
-            blockInput.className = 'cmd-row-body-input';
+            // let blockInput = document.createElement('div');
+            // blockInput.className = 'cmd-row-body-input';
 
             let input = document.createElement('div');
             input.className = 'cmd-input';
@@ -137,10 +188,10 @@ class Cmd {
             let inputCursor = document.createElement('div');
             inputCursor.className = 'cmd-input-cursor';
 
-            blockInput.appendChild(input);
-            blockInput.appendChild(inputCursor);
+            blockRowBody.appendChild(input);
+            blockRowBody.appendChild(inputCursor);
 
-            blockRowBody.appendChild(blockInput);
+            // blockRowBody.appendChild(blockInput);
         }
 
         blockRow.appendChild(blockRowName);

@@ -1,6 +1,7 @@
 body {
     margin: 0;
     padding: 0;
+    overflow-y: hidden;
 }
 * {
     box-sizing: border-box;
@@ -17,18 +18,20 @@ body {
     display: flex;
 }
 .cmd-row {
-    display: flex;
+    /*display: flex;*/
 }
 .cmd-row-name {
     color: #00b700;
     font-weight: bold;
     padding-right: 1ch;
+    display: inline-block;
 }
-.cmd-row-body-input {
-    /*display: flex;*/
+.cmd-row-body {
+    display: inline;
     position: relative;
 }
 .cmd-input {
+    display: inline;
     caret-color: transparent;
     word-break: break-all;
 }
