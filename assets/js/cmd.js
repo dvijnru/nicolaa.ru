@@ -1,6 +1,5 @@
+/*! CMD Page v0.0.1 | Nikolay Grigoriev | https://github.com/dvijnru/nicolaa.ru */
 class Cmd {
-
-    // test = '';
 
     constructor(props) {
         this.init(props);
@@ -9,12 +8,13 @@ class Cmd {
     init = (props) => {
 
         this.rowName = 'guest: ';
+        this.historyId = 0;
 
         if(props.selector) {
             this.id = props.selector;
             this.$block = document.getElementById(this.id);
         } else {
-
+            return alert('Не указан селектор блока для терминала');
         }
         if(props.old) {
             this.old = props.old;
@@ -23,51 +23,93 @@ class Cmd {
         }
 
         this.$container = this.renderContainer();
+
         this.$input = this.$container.querySelector('.cmd-input');
         this.$inputCursor = this.$container.querySelector('.cmd-input-cursor');
 
-        this.listners();
+        this.listeners();
 
+        this.commands = [
+            {
+                name: 'help',
+                message: this.sendMessageHelp,
+                description: 'Вывод списка доступных команд',
+            }, {
+                name: 'about',
+                message: 'Меня зовут Николай, живу в Екатеринбурге<br>В сфере программирования около 7 лет<br>Стек: php, mysql, redis, elasticsearch, laravel, html, css, js, react, vue',
+                description: 'Вывод информации обо мне',
+            }, {
+                name: 'template-change',
+                message: this.changeTemplate,
+                description: 'Изменение шаблона терминала',
+            }, {
+                name: 'portfolio',
+                message: this.sendPortfolio,
+                description: 'Вывод списка моих работ',
+            }, {
+                name: 'history',
+                message: this.sendHistory,
+                description: 'Вывод истории введенных команд',
+            }, {
+                name: 'history-clear',
+                message: this.clearHistory,
+                description: 'Очистка истории введенных команд',
+            }, {
+                name: 'clear',
+                message: this.clearTerminal,
+                description: 'Очистка терминала',
+            }
+        ];
+
+        this.portfolios = [
+            {
+                id: 1,
+                name: 'nicolaa.ru',
+                message: 'Тут описание сайта',
+                description: 'Мой сайт'
+            }
+        ];
+
+        this.sendMessage('Добро пожаловать в мой терминал<br>Для получения списка доступных команд введите "help"');
+        this.setInputFocus();
     }
 
-    listners = () => {
-
+    listeners = () => {
         document.addEventListener('click', this.clickHandler);
-
-        this.$input.addEventListener('blur', this.inputBlur);
-        this.$input.addEventListener('input', this.inputInput);
-        this.$input.addEventListener('click', this.inputClickHandler);
+        this.$input.addEventListener('input', this.inputInputHandler);
         this.$input.addEventListener('keyup', this.inputKeyUpHandler);
         this.$input.addEventListener('keydown', this.inputKeyDownHandler);
     }
-    beforeunloadHandler = (event) => {
-        this.$input.blur();
-        this.$input.classList.remove('cmd-input-focus');
-    }
-    inputBlur = (event) => {
-        console.log(event);
-    }
-    inputInput = () => {
-        this.changeCursor();
-    }
-    inputClickHandler = () => {
+    inputInputHandler = () => {
         this.changeCursor();
     }
     inputKeyUpHandler = (event) => {
         event.preventDefault();
         let keyCode = event.keyCode || event.which;
-        if(keyCode == 37 || keyCode == 38 || keyCode == 39 || keyCode == 40) {
+        if(keyCode == 35 || keyCode == 36 || keyCode == 37 || keyCode == 38 || keyCode == 39 || keyCode == 40) {
             this.changeCursor();
         }
     }
-    inputKeyUpHandler = (event) => {
-        event.preventDefault();
+    inputKeyDownHandler = (event) => {
         let keyCode = event.keyCode || event.which;
         if(keyCode == 13) {
-            this.sendMessage();
+            event.preventDefault();
+            this.sendCommand();
+        } else if(keyCode == 38) {
+            this.getHistory('up');
+        } else if(keyCode == 40) {
+            this.getHistory('down');
         }
     }
-    sendMessage = () => {
+    clickHandler = (event) => {
+        if(event.target.closest('.cmd-input')) {
+            this.changeCursor();
+        } else {
+            this.setInputFocus();
+        }
+    }
+
+    sendCommand = () => {
         this.$inputCursor.style.display = 'none';
         let value = this.$input.innerText.trim();
         let $blockRow = this.renderBlockRow(value);
@@ -75,56 +117,165 @@ class Cmd {
         this.$input.innerHTML = '';
         this.changeCursor();
         this.$inputCursor.style.display = 'block';
-        this.sendCommand(value);
+        this.getCommand(value);
+        this.setCommandHistory(value);
     }
-    sendCommand = (value) => {
-        let message = 'command not found: ' + value + '<br>type "help" for more information';
-        if(value == 'help') {
-            message = 'help';
-        }
-        let $block = document.createElement('div');
-        $block.className = 'cmd-block-message';
-        // $block.innerHTML = message;
-        this.$container.querySelector('.cmd-block-content').appendChild($block);
+    sendMessage = (message) => {
+        let $block = this.renderMessage();
         this.typeWriter($block, message, 0);
     }
-
-    typeWriter = ($block, message, i, tag = '') => {
-        if (i < message.length) {
-            let text = message.charAt(i);
-            if(text == '<') {
-                tag += text;
-            } else if(text == '>') {
-                tag += text;
-                $block.innerHTML += tag;
-                tag = '';
-            } else if(tag) {
-                tag += text;
-            } else {
-                $block.innerHTML += text;
-            }
-            i++;
-            setTimeout(this.typeWriter, 20, $block, message, i, tag);
-        }
+    sendMessageHelp = () => {
+        let message = '';
+        this.commands.forEach((item) => {
+            message += `${item.name} - ${item.description}<br>`;
+        });
+        this.sendMessage(message);
+    }
+    sendHistory = () => {
+        let message = '';
+        this.getCommandHistory().forEach((item) => {
+            message += `${item}<br>`;
+        });
+        this.sendMessage(message);
     }
 
-
+    changeTemplate = () => {
+        this.$container.classList.toggle('terminal-old');
+        this.sendMessage('Шаблон изменен');
+    }
     changeCursor = () => {
-        let position = window.getSelection().anchorOffset;
-        this.$inputCursor.style.left = position + 'ch';
+        let position = this.getCursorPosition();
+        this.$inputCursor.style.top = `${position.top}px`;
+        this.$inputCursor.style.left = `${position.left}px`;
     }
-    clickHandler = (event) => {
 
-        if(event.target == '') {
-
-        } else {
-            this.$input.focus();
-            if(!this.$container.classList.contains('cmd-input-focus')) {
-                this.$container.classList.add('cmd-input-focus');
+    getCursorPosition = () => {
+        let top = 0;
+        let left = 0;
+        let selection = document.getSelection();
+        if (selection.rangeCount > 0) {
+            const range = selection.getRangeAt(0);
+            const rect = range.getBoundingClientRect();
+            top = rect.top + window.pageYOffset + 3;
+            left = rect.left;
+            let value = this.$input.innerText.trim();
+            if(!value) {
+                let height = this.$container.querySelector('.cmd-block-content').offsetHeight;
+                top = height + 3;
+                left += 69;
             }
         }
-
+        return {
+            top: top,
+            left: left
+        }
     }
+    getCommand = (value) => {
+        let valueArray = value.split(' ');
+        let message = `Команда ${value} не найдена<br>Введите "help" для получения списка доступных команд`;
+
+        this.commands.forEach((item) => {
+            if(item.name == valueArray[0]) {
+                if (typeof item.message === 'function') {
+                    item.message(valueArray);
+                    message = '';
+                } else {
+                    message = item.message;
+                }
+            }
+        });
+
+        this.sendMessage(message);
+    }
+    sendPortfolio = (value) => {
+        if(value[1]) {
+            this.getPortfolio(value[1]);
+        } else {
+            this.getPortfolios();
+        }
+    }
+    getPortfolios = (value) => {
+        let message = '';
+        this.portfolios.forEach((item) => {
+            message += `id: ${item.id}; ${item.name} - ${item.description}<br>`;
+        });
+        message += 'Для получения подробной информации о работе введите "portfolio id"';
+        this.sendMessage(message);
+    }
+    getPortfolio = (id) => {
+        let message = '';
+        this.portfolios.forEach((item) => {
+            if(item.id == id) {
+                message = item.message;
+            }
+        });
+        if(!message) {
+            message = `Работа с id ${id} не найдена`;
+        }
+        this.sendMessage(message);
+    }
+    getCommandHistory = () => {
+        let history = localStorage.getItem('cmd-history');
+        if(history) {
+            history = JSON.parse(history);
+        } else {
+            history = [];
+        }
+        return history;
+    }
+    getHistory = (direction) => {
+        let top = this.$input.offsetTop + 3;
+        let topCursor = this.$inputCursor.offsetTop;
+        let history = this.getCommandHistory();
+        let historyLength = history.length;
+        let id = 0;
+        if(direction == 'up') {
+            if(top == topCursor) {
+                if(this.historyId > -historyLength) {
+                    this.historyId -= 1;
+                    id = historyLength + this.historyId;
+                }
+            }
+        } else if(direction == 'down') {
+            if(top == topCursor) {
+                if(this.historyId < 0) {
+                    this.historyId += 1;
+                    id = historyLength + this.historyId;
+                }
+            }
+        }
+        if(id) {
+            if(history[id]) {
+                history = history[id];
+                this.$input.innerHTML = history;
+            } else {
+                this.$input.innerHTML = '';
+            }
+        }
+    }
+
+    setInputFocus = () => {
+        this.$input.focus();
+        if(!this.$container.classList.contains('cmd-input-focus')) {
+            this.$container.classList.add('cmd-input-focus');
+        }
+    }
+    setCommandHistory = (value) => {
+        let history = localStorage.getItem('cmd-history');
+        if(history) {
+            history = JSON.parse(history);
+            if(history[history.length - 1] != value) {
+                history.push(value);
+            }
+            history = JSON.stringify(history);
+        } else {
+            history = [value];
+            history = JSON.stringify(history);
+        }
+        localStorage.setItem('cmd-history', history);
+        this.historyId = 0;
+    }
+
     renderContainer = () => {
 
         let $terminal = document.createElement('div');
@@ -154,7 +305,7 @@ class Cmd {
             $terminal.classList.add('terminal-old');
             let $terminalScanLines = document.createElement('div');
             $terminalScanLines.className = 'scanlines';
-            $terminalScanLines.style = '--time: 1.8588235294117648;';
+            $terminalScanLines.style = '--time: 1.8;';
             let $terminalNoise = document.createElement('div');
             $terminalNoise.className = 'noise';
             $terminal.appendChild($terminalScanLines);
@@ -178,9 +329,6 @@ class Cmd {
         if(text) {
             blockRowBody.innerHTML = text;
         } else {
-            // let blockInput = document.createElement('div');
-            // blockInput.className = 'cmd-row-body-input';
-
             let input = document.createElement('div');
             input.className = 'cmd-input';
             input.contentEditable = true;
@@ -191,7 +339,6 @@ class Cmd {
             blockRowBody.appendChild(input);
             blockRowBody.appendChild(inputCursor);
 
-            // blockRowBody.appendChild(blockInput);
         }
 
         blockRow.appendChild(blockRowName);
@@ -199,10 +346,41 @@ class Cmd {
 
         return blockRow;
     }
+    renderMessage = () => {
+        let $block = document.createElement('div');
+        $block.className = 'cmd-block-message';
+        this.$container.querySelector('.cmd-block-content').appendChild($block);
+        return $block;
+    }
 
-    as = () => {
-        this.test = 'test';
-        console.log(this.test);
+    clearTerminal = () => {
+        this.$container.querySelector('.cmd-block-content').innerHTML = '';
+        this.$input.innerHTML = '';
+        this.changeCursor();
+    }
+    clearHistory = () => {
+        localStorage.removeItem('cmd-history');
+        this.historyId = 0;
+    }
+
+    typeWriter = ($block, message, i, tag = '') => {
+        if (i < message.length) {
+            let text = message.charAt(i);
+            if(text == '<') {
+                tag += text;
+            } else if(text == '>') {
+                tag += text;
+                $block.innerHTML += tag;
+                tag = '';
+            } else if(tag) {
+                tag += text;
+            } else {
+                $block.innerHTML += text;
+            }
+            i++;
+            this.changeCursor()
+            setTimeout(this.typeWriter, 10, $block, message, i, tag);
+        }
     }
 
 }

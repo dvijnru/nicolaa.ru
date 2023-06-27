@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<body>
+
+<div class="terminal">
+    <pre id="output"></pre>
+    <div contenteditable="true" id="input"></div>
+    <div id="caret"></div>
+</div>
+<button id="send-button">Send</button>
+
+<style>
+    .terminal {
+        background-color: black;
+        color: white;
+        font-family: monospace;
+        padding: 10px;
+        height: 300px;
+        overflow-y: scroll;
+    }
+
+    #input {
+        outline: none;
+    }
+
+    #caret {
+        position: absolute;
+        background-color: white;
+        width: 2px;
+        height: 1.2em;
+        pointer-events: none;
+    }
+
+    #send-button {
+        display: block;
+        margin-top: 10px;
+    }
+</style>
+
+<script>
+    const output = document.getElementById('output');
+    const input = document.getElementById('input');
+    const caret = document.getElementById('caret');
+    const sendButton = document.getElementById('send-button');
+
+    function updateCaretPosition() {
+        const range = window.getSelection().getRangeAt(0);
+        const rect = range.getBoundingClientRect();
+        caret.style.top = `${rect.top}px`;
+        caret.style.left = `${rect.left}px`;
+    }
+
+    function sendMessage() {
+        const message = input.textContent.trim();
+        if (message !== '') {
+            output.innerText += `$ ${message}\n`;
+            input.innerHTML = '';
+        }
+    }
+
+    input.addEventListener('input', () => {
+        updateCaretPosition();
+    });
+
+    window.addEventListener('click', () => {
+        input.focus();
+    });
+
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+
+    document.addEventListener('selectionchange', updateCaretPosition);
+
+    sendButton.addEventListener('click', () => {
+        sendMessage();
+    });
+
+    updateCaretPosition();
+</script>
+
+</body>
+</html>
