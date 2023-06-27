@@ -65,13 +65,28 @@ class Cmd {
             {
                 id: 1,
                 name: 'nicolaa.ru',
-                message: 'Тут описание сайта',
-                description: 'Мой сайт'
+                message: 'Сайт портфолио, выполненный в стили терминала, написан на чистом js, без использования библиотек, сборщиков и прочего',
+                description: 'Мой сайт портфолио'
+            }, {
+                id: 2,
+                name: 'brunj.ru',
+                message: 'Облачный сервис для создания электронных визиток<br>Сайт включает функции:<br> - Конструктор визиток;<br> - Раздел новостей и статей;<br> - Мини магазин;<br> - Тарифные планы;<br> - Генерация YML фида всех товаров;<br> - Создание промокодов;<br> - Подключена ЮКасса;<br> - Раздел Поддержки;<br> - Партнерская программа и многое другое;<br><br>Сайт сделан на laravel',
+                description: 'Облачный конструктор мини сайтов или электронных визиток'
+            }, {
+                id: 3,
+                name: 'vin.dvijn.ru',
+                message: 'Сайт для проверки истории автомобиля<br>Сайт включает функции:<br> - Интеграция с автокодом;<br> - Интеграция с api-cloud;<br> - Подключена ЮКасса;<br> - Партнерская программа и многое другое;<br><br>Сайт сделан на laravel',
+                description: 'Сайт для проверки истории автомобиля'
+            }, {
+                id: 4,
+                name: 'mocraft.ru',
+                message: 'Сайт, каталог серверов майнкрафт<br>Сайт включает функции:<br> - Каталог серверов;<br> - Виджеты для серверов;<br> - Отзывы;<br> - Форум;<br> - Раздел новостей и статей;<br> - Каталог файлов;<br> - Онлайн редактор скинов;<br> - Генератор достижение;<br> - Подключена ЮКасса;<br> - Раздел Поддержки;<br> - Партнерская программа и многое другое;<br><br>Сайт сделан на laravel<br>Так же дополнительное разработано приложение VK Mini Apps на REACT и REST API: vk.com/mocraft_app',
+                description: 'Сайт, каталог серверов майнкрафт'
             }
         ];
 
-        this.sendMessage('Добро пожаловать в мой терминал<br>Для получения списка доступных команд введите "help"');
         this.setInputFocus();
+        this.sendMessage('Добро пожаловать в мой терминал<br>Для получения списка доступных команд введите "help"');
     }
 
     listeners = () => {
@@ -117,8 +132,10 @@ class Cmd {
         this.$input.innerHTML = '';
         this.changeCursor();
         this.$inputCursor.style.display = 'block';
-        this.getCommand(value);
-        this.setCommandHistory(value);
+        if(value) {
+            this.getCommand(value);
+            this.setCommandHistory(value);
+        }
     }
     sendMessage = (message) => {
         let $block = this.renderMessage();
@@ -156,8 +173,8 @@ class Cmd {
         if (selection.rangeCount > 0) {
             const range = selection.getRangeAt(0);
             const rect = range.getBoundingClientRect();
-            top = rect.top + window.pageYOffset + 3;
-            left = rect.left;
+            top = rect.top + window.pageYOffset - 8;
+            left = rect.left - 8;
             let value = this.$input.innerText.trim();
             if(!value) {
                 let height = this.$container.querySelector('.cmd-block-content').offsetHeight;
@@ -197,7 +214,7 @@ class Cmd {
     getPortfolios = (value) => {
         let message = '';
         this.portfolios.forEach((item) => {
-            message += `id: ${item.id}; ${item.name} - ${item.description}<br>`;
+            message += `id: ${item.id}; <a target="_blank" href="https://${item.name}">${item.name}</a> - ${item.description}<br>`;
         });
         message += 'Для получения подробной информации о работе введите "portfolio id"';
         this.sendMessage(message);
@@ -206,7 +223,8 @@ class Cmd {
         let message = '';
         this.portfolios.forEach((item) => {
             if(item.id == id) {
-                message = item.message;
+                message += `id: ${item.id}; <a target="_blank" href="https://${item.name}">${item.name}</a><br>`;
+                message += item.message;
             }
         });
         if(!message) {
@@ -224,7 +242,7 @@ class Cmd {
         return history;
     }
     getHistory = (direction) => {
-        let top = this.$input.offsetTop + 3;
+        let top = this.$input.offsetTop + 2;
         let topCursor = this.$inputCursor.offsetTop;
         let history = this.getCommandHistory();
         let historyLength = history.length;
@@ -303,14 +321,14 @@ class Cmd {
 
         if(this.old) {
             $terminal.classList.add('terminal-old');
-            let $terminalScanLines = document.createElement('div');
-            $terminalScanLines.className = 'scanlines';
-            $terminalScanLines.style = '--time: 1.8;';
-            let $terminalNoise = document.createElement('div');
-            $terminalNoise.className = 'noise';
-            $terminal.appendChild($terminalScanLines);
-            $terminal.appendChild($terminalNoise);
         }
+        let $terminalScanLines = document.createElement('div');
+        $terminalScanLines.className = 'scanlines';
+        $terminalScanLines.style = '--time: 1.8;';
+        let $terminalNoise = document.createElement('div');
+        $terminalNoise.className = 'noise';
+        $terminal.appendChild($terminalScanLines);
+        $terminal.appendChild($terminalNoise);
 
         this.$block.appendChild($terminal);
 
@@ -363,24 +381,27 @@ class Cmd {
         this.historyId = 0;
     }
 
+
     typeWriter = ($block, message, i, tag = '') => {
-        if (i < message.length) {
-            let text = message.charAt(i);
-            if(text == '<') {
-                tag += text;
-            } else if(text == '>') {
-                tag += text;
-                $block.innerHTML += tag;
-                tag = '';
-            } else if(tag) {
-                tag += text;
-            } else {
-                $block.innerHTML += text;
-            }
-            i++;
-            this.changeCursor()
-            setTimeout(this.typeWriter, 10, $block, message, i, tag);
-        }
+        $block.innerHTML += message;
+        this.changeCursor();
+    //     if (i < message.length) {
+    //         let text = message.charAt(i);
+    //         if(text == '<') {
+    //             tag += text;
+    //         } else if(text == '>') {
+    //             tag += text;
+    //             $block.innerHTML += tag;
+    //             tag = '';
+    //         } else if(tag) {
+    //             tag += text;
+    //         } else {
+    //             $block.innerHTML += text;
+    //         }
+    //         i++;
+    //         this.changeCursor()
+    //         setTimeout(this.typeWriter, 10, $block, message, i, tag);
+    //     }
     }
 
 }
